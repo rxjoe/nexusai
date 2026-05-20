@@ -1,0 +1,2606 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI - منصة الذكاء الاصطناعي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0d0d0f;
+    --bg-secondary: #141416;
+    --bg-tertiary: #1c1c1f;
+    --bg-hover: #222226;
+    --bg-active: #2a2a30;
+    --accent-blue: #00d4ff;
+    --accent-purple: #7c3aed;
+    --accent-glow: rgba(0,212,255,0.15);
+    --accent-purple-glow: rgba(124,58,237,0.15);
+    --text-primary: #f0f0f5;
+    --text-secondary: #8a8a9a;
+    --text-muted: #55555f;
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.1);
+    --user-bubble: #1e2035;
+    --ai-bubble: #141416;
+    --sidebar-w: 260px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+
+  /* ─── LAYOUT ─── */
+  #app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+  /* ─── SIDEBAR ─── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    z-index: 100;
+    position: relative;
+  }
+
+  #sidebar.collapsed {
+    transform: translateX(100%);
+    margin-left: calc(0px - var(--sidebar-w));
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+  }
+
+  .new-chat-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .new-chat-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); color: var(--text-primary); }
+
+  /* Nav icons strip */
+  .sidebar-nav {
+    display: flex;
+    padding: 8px 12px;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-icon-btn {
+    flex: 1;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .nav-icon-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+  .nav-icon-btn.active { background: var(--bg-active); color: var(--accent-blue); }
+  .nav-icon-btn .tooltip {
+    position: absolute;
+    bottom: -28px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-strong);
+    color: var(--text-primary);
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 200;
+  }
+  .nav-icon-btn:hover .tooltip { opacity: 1; }
+
+  /* Sidebar content panels */
+  .sidebar-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .sidebar-panel.active { display: flex; }
+
+  .panel-title {
+    padding: 12px 16px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Conversations list */
+  .conv-list { flex: 1; overflow-y: auto; padding: 4px 8px 16px; }
+
+  .conv-group-label {
+    padding: 8px 8px 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .conv-item {
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .conv-item:hover { background: var(--bg-hover); }
+  .conv-item.active { background: var(--bg-active); }
+  .conv-item svg { flex-shrink: 0; color: var(--text-muted); }
+  .conv-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .conv-item.active span { color: var(--text-primary); }
+
+  /* File explorer */
+  .file-tree { flex: 1; overflow-y: auto; padding: 4px 8px 16px; }
+
+  .file-item {
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .file-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .file-item.folder { color: #f5c842; }
+  .file-item.folder svg { color: #f5c842; }
+  .file-item.file-js svg { color: #f5d845; }
+  .file-item.file-html svg { color: #e06c3c; }
+  .file-item.file-css svg { color: #4b9eff; }
+  .file-item.file-py svg { color: #4b9eff; }
+  .file-indent { padding-right: 18px; }
+
+  /* Skills panel */
+  .skills-grid { padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; overflow-y: auto; }
+
+  .skill-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .skill-card:hover { border-color: var(--accent-blue); background: var(--bg-hover); box-shadow: 0 0 12px var(--accent-glow); }
+  .skill-card .skill-icon { color: var(--accent-blue); margin-bottom: 6px; display: flex; justify-content: center; }
+  .skill-card .skill-name { font-size: 11.5px; font-weight: 500; color: var(--text-primary); }
+  .skill-card .skill-desc { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Sidebar bottom */
+  .sidebar-bottom {
+    border-top: 1px solid var(--border);
+    padding: 10px;
+  }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .user-pill:hover { background: var(--bg-hover); }
+
+  .user-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: white;
+    flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; overflow: hidden; }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-plan { font-size: 11px; color: var(--text-muted); }
+
+  /* ─── MAIN AREA ─── */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+  /* Top bar */
+  #topbar {
+    height: 52px;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-primary);
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-toggle {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .sidebar-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .page-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .save-indicator { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+  .model-selector {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12.5px;
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    position: relative;
+  }
+  .model-selector:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+  .model-dot { width: 18px; height: 18px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
+.model-dot img { width:18px; height:18px; border-radius:3px; }
+
+  .model-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%; transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 6px;
+    min-width: 200px;
+    z-index: 500;
+    display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .model-dropdown.open { display: block; animation: fadeDown 0.15s ease; }
+
+  .model-opt {
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .model-opt svg { flex-shrink: 0; }
+  .model-opt > div { flex: 1; }
+  .model-opt:hover { background: var(--bg-hover); }
+  .model-opt.selected { background: var(--bg-active); }
+  .model-opt-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .model-opt-desc { font-size: 11px; color: var(--text-muted); }
+  .model-opt-badge {
+    font-size: 10px; padding: 2px 7px;
+    border-radius: 99px;
+    background: rgba(0,212,255,0.12);
+    color: var(--accent-blue);
+    white-space: nowrap;
+  }
+
+  .topbar-actions { display: flex; gap: 4px; }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    background: transparent; border: none;
+    color: var(--text-secondary); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* ─── PAGES ─── */
+  .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .page.active { display: flex; }
+
+  /* ─── CHAT PAGE ─── */
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .messages-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 20px 8px;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: calc(100vh - 200px);
+    gap: 24px;
+    padding: 40px 20px;
+  }
+
+  .welcome-logo { animation: floatY 3s ease-in-out infinite; }
+
+  .welcome h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    text-align: center;
+  }
+
+  .welcome p {
+    font-size: 15px; color: var(--text-secondary); text-align: center; max-width: 420px; line-height: 1.7;
+  }
+
+  .suggestions-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 520px;
+  }
+
+  .suggestion-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: right;
+  }
+  .suggestion-card:hover { border-color: var(--accent-blue); background: var(--bg-tertiary); box-shadow: 0 0 16px var(--accent-glow); transform: translateY(-1px); }
+  .suggestion-card .sug-label { font-size: 12px; color: var(--text-muted); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+  .suggestion-card .sug-label svg { color: var(--accent-blue); }
+  .suggestion-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* Messages */
+  .message { margin-bottom: 20px; animation: msgIn 0.3s ease; }
+
+  .message.user { display: flex; justify-content: flex-end; }
+  .message.ai, .ai-message { display: flex; justify-content: flex-start; align-items: flex-start; gap: 12px; }
+
+  .ai-avatar {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ai-avatar img {
+    width: 36px; height: 36px;
+  }
+
+  .message-bubble {
+    max-width: 82%;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .message.user .message-bubble {
+    background: var(--user-bubble);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-bottom-right-radius: 4px;
+    color: var(--text-primary);
+  }
+
+  .message.ai .message-bubble {
+    background: transparent;
+    border: none;
+    border-bottom-left-radius: 4px;
+    color: var(--text-primary);
+    flex: 1;
+    padding: 4px 0;
+  }
+
+  .message-actions {
+    display: none; gap: 4px; margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .message.ai:hover .message-actions { display: flex; opacity: 1; }
+
+  .msg-action-btn {
+    height: 26px; padding: 0 8px;
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-muted); cursor: pointer;
+    font-size: 11.5px; display: flex; align-items: center; gap: 4px;
+    transition: all 0.15s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  .msg-action-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
+
+  /* Code blocks */
+  .code-block {
+    background: #111115;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .copy-code-btn {
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 11px; display: flex; align-items: center; gap: 4px; padding: 2px 6px;
+    border-radius: 4px; transition: all 0.15s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  .copy-code-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  pre { padding: 14px 16px; overflow-x: auto; }
+  pre code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.6;
+    color: #e0e0f0;
+  }
+
+  /* Markdown styles */
+  .ai-content h1, .ai-content h2, .ai-content h3 { margin: 16px 0 8px; font-weight: 600; }
+  .ai-content h1 { font-size: 20px; }
+  .ai-content h2 { font-size: 17px; }
+  .ai-content h3 { font-size: 15px; }
+  .ai-content p { margin-bottom: 10px; }
+  .ai-content ul, .ai-content ol { padding-right: 20px; margin-bottom: 10px; }
+  .ai-content li { margin-bottom: 4px; }
+  .ai-content strong { color: #fff; font-weight: 600; }
+  .ai-content em { color: var(--text-secondary); font-style: italic; }
+  .ai-content code:not(pre code) {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.15);
+    padding: 1px 5px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--accent-blue);
+  }
+  .ai-content table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .ai-content th { background: var(--bg-tertiary); padding: 8px 12px; text-align: right; font-size: 12px; border: 1px solid var(--border); }
+  .ai-content td { padding: 7px 12px; border: 1px solid var(--border); font-size: 13px; }
+  .ai-content tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .ai-content blockquote { border-right: 3px solid var(--accent-blue); padding: 8px 14px; background: var(--accent-glow); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 10px 0; }
+
+  /* Typing animation */
+  .research-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--accent-purple);
+    margin-bottom: 8px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(124,58,237,0.15);
+    font-weight: 500;
+  }
+  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-blue); animation: typingPulse 1.2s ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* ─── INPUT AREA ─── */
+  #input-area {
+    padding: 12px 20px 16px;
+    flex-shrink: 0;
+  }
+
+  .input-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .input-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+  }
+  .input-box:focus-within { border-color: rgba(0,212,255,0.3); box-shadow: 0 0 0 3px rgba(0,212,255,0.06); }
+
+  .input-top { display: flex; align-items: flex-end; gap: 8px; padding: 10px 14px 8px; }
+
+  #chat-input {
+    flex: 1;
+    background: transparent; border: none; outline: none;
+    color: var(--text-primary);
+    font-size: 14px; line-height: 1.6;
+    resize: none; min-height: 24px; max-height: 160px;
+    overflow-y: auto;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    padding: 4px 0;
+  }
+  #chat-input::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+    color: white;
+  }
+  .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(0,212,255,0.3); }
+  .send-btn:disabled { opacity: 0.4; transform: none; cursor: not-allowed; }
+
+  .input-bottom {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .input-action {
+    height: 28px; padding: 0 10px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 99px; color: var(--text-muted); cursor: pointer;
+    font-size: 12px; display: flex; align-items: center; gap: 5px;
+    transition: all 0.15s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  .input-action:hover { border-color: var(--border-strong); color: var(--text-secondary); background: var(--bg-hover); }
+  .input-action.active { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-glow); }
+
+  .input-hint { margin-right: auto; font-size: 11px; color: var(--text-muted); }
+
+  /* ─── PROJECTS PAGE ─── */
+  .page-inner { padding: 32px; flex: 1; overflow-y: auto; }
+
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+  .page-header p { color: var(--text-secondary); font-size: 14px; }
+
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+  .project-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .project-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0; left: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .project-card:hover { border-color: var(--border-strong); background: var(--bg-tertiary); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .project-card:hover::before { opacity: 1; }
+
+  .project-icon {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    background: var(--accent-glow); border: 1px solid rgba(0,212,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-blue); margin-bottom: 14px;
+  }
+  .project-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .project-desc { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .project-meta { display: flex; align-items: center; gap: 10px; }
+  .project-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--bg-active); color: var(--text-muted); }
+  .project-date { font-size: 11px; color: var(--text-muted); margin-right: auto; }
+
+  .new-project-card {
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; min-height: 140px;
+    color: var(--text-muted);
+  }
+  .new-project-card:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-glow); }
+
+  /* ─── SETTINGS PAGE ─── */
+  .settings-layout { display: flex; flex: 1; overflow: hidden; }
+  .settings-nav { width: 200px; padding: 16px 12px; border-left: 1px solid var(--border); flex-shrink: 0; }
+  .settings-nav-item { padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.15s; margin-bottom: 2px; }
+  .settings-nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .settings-nav-item.active { background: var(--bg-active); color: var(--accent-blue); }
+
+  .settings-content { flex: 1; overflow-y: auto; padding: 32px; }
+  .settings-section { margin-bottom: 32px; }
+  .settings-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .setting-label { font-size: 13.5px; color: var(--text-primary); }
+  .setting-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .toggle {
+    width: 42px; height: 24px;
+    background: var(--bg-active); border-radius: 99px; position: relative;
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent-blue); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; right: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: white;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(-18px); }
+
+  .settings-input {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    color: var(--text-primary); font-size: 13px; width: 280px;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .settings-input:focus { border-color: var(--accent-blue); }
+
+  .settings-btn {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    color: var(--text-primary); cursor: pointer; font-size: 13px;
+    transition: all 0.2s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .settings-btn:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+  .settings-btn.primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border: none; color: white; }
+  .settings-btn.primary:hover { box-shadow: 0 4px 14px rgba(0,212,255,0.3); }
+  .settings-btn.danger { color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
+  .settings-btn.danger:hover { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.4); }
+
+  .github-connect-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .github-icon { width: 48px; height: 48px; color: var(--text-primary); }
+
+  /* ─── PRICING PAGE ─── */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; max-width: 860px; margin: 0 auto; }
+
+  .pricing-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .pricing-card.popular {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 32px rgba(0,212,255,0.1);
+  }
+  .popular-badge {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    color: white; font-size: 11px; font-weight: 600;
+    padding: 3px 14px; border-radius: 99px;
+  }
+  .pricing-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .pricing-price { font-size: 36px; font-weight: 800; margin: 12px 0; font-family: 'Syne', sans-serif; }
+  .pricing-price span { font-size: 15px; color: var(--text-muted); font-weight: 400; }
+  .pricing-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .pricing-features { list-style: none; margin-bottom: 24px; }
+  .pricing-features li { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+  .pricing-features li svg { color: var(--accent-blue); flex-shrink: 0; }
+  .pricing-btn {
+    width: 100%; padding: 11px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  .pricing-btn.outline { background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); }
+  .pricing-btn.outline:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-glow); }
+  .pricing-btn.gradient { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border: none; color: white; }
+  .pricing-btn.gradient:hover { box-shadow: 0 6px 20px rgba(0,212,255,0.35); transform: translateY(-1px); }
+
+  /* ─── AGENT MODE ─── */
+  .agent-mode-banner {
+    display: none;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, rgba(0,212,255,0.06), transparent);
+    border-bottom: 1px solid rgba(0,212,255,0.15);
+    align-items: center; gap: 10px;
+    font-size: 12.5px; color: var(--accent-blue);
+    flex-shrink: 0;
+  }
+  .agent-mode-banner.active { display: flex; }
+  .search-banner {
+    display: none;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, rgba(124,58,237,0.06), transparent);
+    border-bottom: 1px solid rgba(124,58,237,0.15);
+    align-items: center; gap: 10px;
+    font-size: 12.5px; color: var(--accent-purple);
+    flex-shrink: 0;
+  }
+  .search-banner.active { display: flex; }
+  .agent-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-blue); animation: agentPulse 1.5s ease-in-out infinite; }
+  .search-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-purple); animation: agentPulse 1.5s ease-in-out infinite; }
+
+  /* ─── MODALS & OVERLAYS ─── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px); z-index: 900;
+    display: none; align-items: center; justify-content: center;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: 400px;
+    max-width: 95vw;
+    animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { color: var(--text-secondary); font-size: 13.5px; margin-bottom: 20px; }
+
+  .auth-btn {
+    width: 100%; padding: 12px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.2s; font-family: 'IBM Plex Sans Arabic', sans-serif;
+    margin-bottom: 10px;
+  }
+  .auth-btn.google { background: white; color: #333; border: 1px solid #ddd; }
+  .auth-btn.google:hover { background: #f5f5f5; }
+  .auth-btn.guest { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-strong); }
+  .auth-btn.guest:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .modal-close {
+    position: absolute; top: 16px; left: 16px;
+    width: 28px; height: 28px;
+    background: transparent; border: none;
+    color: var(--text-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* ─── NOTIFICATIONS ─── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-tertiary); border: 1px solid var(--border-strong);
+    color: var(--text-primary); padding: 10px 18px;
+    border-radius: 99px; font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 1000; opacity: 0; transition: all 0.3s;
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeDown { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  @keyframes typingPulse { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+  @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes agentPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.4); } 50% { box-shadow: 0 0 0 6px rgba(0,212,255,0); } }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    #sidebar { position: fixed; right: 0; top: 0; height: 100vh; transform: translateX(100%); }
+    #sidebar.open { transform: translateX(0); box-shadow: -8px 0 32px rgba(0,0,0,0.5); }
+    .suggestions-grid { grid-template-columns: 1fr; }
+    .model-selector span { display: none; }
+    .page-inner { padding: 16px; }
+  }
+
+  /* Logo: invert black→white for dark bg (file untouched) */
+
+
+  /* Gradient text utility */
+  .grad { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Context menu */
+  .ctx-menu {
+    position: fixed; background: var(--bg-tertiary); border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 6px;
+    min-width: 160px; z-index: 600; display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: fadeDown 0.15s ease;
+  }
+  .ctx-menu.open { display: block; }
+  .ctx-item { padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; transition: background 0.1s; }
+  .ctx-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .ctx-item.danger:hover { background: rgba(255,107,107,0.08); color: #ff6b6b; }
+
+  /* Streaming cursor */
+  .cursor-blink { display: inline-block; width: 2px; height: 14px; background: var(--accent-blue); margin-right: 2px; animation: cursorBlink 0.8s step-end infinite; }
+  @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* File upload preview */
+  .file-preview {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 8px 14px; border-top: 1px solid var(--border);
+  }
+  .file-chip {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; font-size: 11.5px; color: var(--text-secondary);
+  }
+  .file-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; font-size: 12px; }
+  .file-chip button:hover { color: var(--text-primary); }
+
+  /* Agent thinking block */
+  .agent-thinking {
+    background: rgba(124,58,237,0.06);
+    border: 1px solid rgba(124,58,237,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px; margin: 8px 0;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .agent-thinking strong { color: #a78bfa; }
+
+  /* Preview iframe area */
+  .preview-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .preview-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  .preview-dots { display: flex; gap: 5px; }
+  .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .preview-iframe { width: 100%; height: 220px; border: none; background: white; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════════════════ -->
+  <aside id="sidebar">
+    <!-- Header -->
+    <div class="sidebar-header">
+      <a class="logo-wrap" href="javascript:void(0)" onclick="navigate('chat')">
+        <img src="assets/nexusai_logo_white.svg" class="logo-icon" alt="NexusAI">
+        <span class="logo-text">NexusAI</span>
+      </a>
+      <button class="new-chat-btn" onclick="newChat()" title="محادثة جديدة">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- Nav tabs -->
+    <div class="sidebar-nav">
+      <button class="nav-icon-btn active" onclick="switchPanel('chats',this)" title="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span class="tooltip">المحادثات</span>
+      </button>
+      <button class="nav-icon-btn" onclick="switchPanel('files',this)" title="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path></svg>
+        <span class="tooltip">الملفات</span>
+      </button>
+      <button class="nav-icon-btn" onclick="switchPanel('skills',this)" title="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span class="tooltip">Skills</span>
+      </button>
+      <button class="nav-icon-btn" onclick="navigate('settings')" title="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span class="tooltip">الإعدادات</span>
+      </button>
+    </div>
+
+    <!-- Panels -->
+    <!-- Chats panel -->
+    <div class="sidebar-panel active" id="panel-chats">
+      <div class="conv-list" id="conv-list">
+        <div class="conv-group-label">اليوم</div>
+        <div class="conv-item active" onclick="loadConv(this,'مرحباً بك في NexusAI')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>مرحباً بك في NexusAI</span>
+        </div>
+        <div class="conv-item" onclick="loadConv(this,'كيف أبني موقع Next.js')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>كيف أبني موقع Next.js</span>
+        </div>
+        <div class="conv-group-label" style="margin-top:10px">أمس</div>
+        <div class="conv-item" onclick="loadConv(this,'تحليل بيانات المبيعات')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>تحليل بيانات المبيعات</span>
+        </div>
+        <div class="conv-item" onclick="loadConv(this,'كتابة خطاب عمل رسمي')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>كتابة خطاب عمل رسمي</span>
+        </div>
+        <div class="conv-item" onclick="loadConv(this,'شرح خوارزميات الذكاء الاصطناعي')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>شرح خوارزميات الذكاء الاصطناعي</span>
+        </div>
+        <div class="conv-group-label" style="margin-top:10px">الأسبوع الماضي</div>
+        <div class="conv-item" onclick="loadConv(this,'مشروع تطبيق React')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>مشروع تطبيق React</span>
+        </div>
+        <div class="conv-item" onclick="loadConv(this,'تلخيص ورقة بحثية')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>تلخيص ورقة بحثية</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Files panel -->
+    <div class="sidebar-panel" id="panel-files">
+      <div class="panel-title">مستعرض الملفات</div>
+      <div class="file-tree">
+        <div class="file-item folder" onclick="toggleFolder(this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path></svg>
+          <span>my-project</span>
+        </div>
+        <div class="file-indent">
+          <div class="file-item folder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path></svg>
+            <span>src</span>
+          </div>
+          <div class="file-indent">
+            <div class="file-item file-js" onclick="showToast('فتح App.jsx')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span>App.jsx</span>
+            </div>
+            <div class="file-item file-js" onclick="showToast('فتح index.js')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span>index.js</span>
+            </div>
+            <div class="file-item file-css" onclick="showToast('فتح styles.css')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span>styles.css</span>
+            </div>
+          </div>
+          <div class="file-item file-html" onclick="showToast('فتح index.html')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            <span>index.html</span>
+          </div>
+          <div class="file-item file-js" onclick="showToast('فتح package.json')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            <span>package.json</span>
+          </div>
+        </div>
+        <div class="file-item folder" style="margin-top:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path></svg>
+          <span>api-project</span>
+        </div>
+        <div class="file-item folder" style="margin-top:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path></svg>
+          <span>data-analysis</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills panel -->
+    <div class="sidebar-panel" id="panel-skills">
+      <div class="panel-title">Skills المتاحة</div>
+      <div class="skills-grid">
+        <div class="skill-card" onclick="activateSkill('تلخيص')">
+          <div class="skill-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"></path></svg>
+          </div>
+          <div class="skill-name">تلخيص</div>
+          <div class="skill-desc">تلخيص النصوص</div>
+        </div>
+        <div class="skill-card" onclick="activateSkill('برمجة بايثون')">
+          <div class="skill-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <div class="skill-name">برمجة بايثون</div>
+          <div class="skill-desc">كتابة أكواد Python</div>
+        </div>
+        <div class="skill-card" onclick="activateSkill('صنع مواقع')">
+          <div class="skill-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <div class="skill-name">صنع مواقع</div>
+          <div class="skill-desc">HTML/CSS/JS</div>
+        </div>
+        <div class="skill-card" onclick="activateSkill('تحليل بيانات')">
+          <div class="skill-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </div>
+          <div class="skill-name">تحليل بيانات</div>
+          <div class="skill-desc">CSV, Excel</div>
+        </div>
+        <div class="skill-card" onclick="activateSkill('الترجمة')">
+          <div class="skill-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+          </div>
+          <div class="skill-name">ترجمة</div>
+          <div class="skill-desc">ترجمة النصوص</div>
+        </div>
+        <div class="skill-card" onclick="activateSkill('Agent Mode')">
+          <div class="skill-icon" style="color: var(--accent-purple)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path></svg>
+          </div>
+          <div class="skill-name">Agent Mode</div>
+          <div class="skill-desc">تنفيذ مهام</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom user area -->
+    <div class="sidebar-bottom" id="user-area">
+      <div class="user-pill" onclick="showLoginPrompt()">
+        <div class="user-avatar">م</div>
+        <div class="user-info">
+          <div class="user-name">زائر</div>
+          <div class="user-plan">سجّل الدخول</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--text-muted)"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════
+       MAIN
+  ═══════════════════════════════════════════════════ -->
+  <main id="main">
+    <!-- Topbar -->
+    <div id="topbar" class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <span class="page-title" id="page-title">NexusAI</span>
+      <span class="save-indicator" id="save-indicator"></span>
+
+      <!-- Model selector -->
+      <div class="model-selector" id="model-selector" onclick="toggleModelDropdown()">
+        <div class="model-dot"><img id="model-icon" src="assets/qwen_logo.svg" width="18" height="18" style="border-radius:3px"></div>
+        <span id="current-model">Qwen3-32B</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <div class="model-dropdown" id="model-dropdown">
+          <div class="model-opt selected" onclick="selectModel('Qwen3-32B',this)">
+            <img src="assets/qwen_logo.svg" width="18" height="18" alt="Qwen" style="border-radius:3px">
+            <div>
+              <div class="model-opt-name">Qwen3-32B</div>
+              <div class="model-opt-desc">سريع ومتوازن</div>
+            </div>
+            <span class="model-opt-badge">افتراضي</span>
+          </div>
+          <div class="model-opt" onclick="selectModel('GPT-OSS-120B',this)">
+            <img src="openai_logo.svg" width="18" height="18" alt="OpenAI" style="border-radius:3px;background:rgba(255,255,255,0.08)">
+            <div>
+              <div class="model-opt-name">GPT-OSS-120B</div>
+              <div class="model-opt-desc">أقوى وأبطأ</div>
+            </div>
+            <span class="model-opt-badge" style="background:rgba(124,58,237,0.15);color:var(--accent-purple)">Pro</span>
+          </div>
+          <div class="model-opt" onclick="selectModel('Nexus-Mini',this)">
+            <img src="assets/nexusai_logo_white.svg" width="18" height="18" alt="NexusAI" style="border-radius:3px">
+            <div>
+              <div class="model-opt-name">Nexus-Mini</div>
+              <div class="model-opt-desc">خفيف وسريع جداً</div>
+            </div>
+            <span class="model-opt-badge" style="background:rgba(34,197,94,0.12);color:#4ade80">مجاني</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="navigate('projects')" title="المشاريع">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        </button>
+        <button class="icon-btn" onclick="navigate('pricing')" title="الأسعار">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        </button>
+        <button class="icon-btn" onclick="navigate('settings')" title="الإعدادات">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Agent mode banner -->
+    <div class="agent-mode-banner" id="agent-banner">
+      <div class="agent-pulse"></div>
+      Agent Mode نشط — النموذج يمكنه قراءة وكتابة الملفات في مشروعك
+      <button class="icon-btn" style="margin-right:auto;width:24px;height:24px" onclick="deactivateAgent()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Search mode banner -->
+    <div class="search-banner" id="search-banner">
+      <div class="search-pulse"></div>
+      البحث المتقدم نشط — سأبحث عن إجابة دقيقة ومفصلة لسؤالك
+      <button class="icon-btn" style="margin-right:auto;width:24px;height:24px" onclick="deactivateSearch()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- ── PAGE: CHAT ── -->
+    <div class="page active" id="page-chat">
+      <div id="chat-messages">
+        <div class="messages-inner" id="messages-inner">
+
+          <!-- Welcome screen -->
+          <div class="welcome" id="welcome-screen">
+            <div class="welcome-logo">
+              <img src="assets/nexusai_logo_white.svg" width="140" height="140" alt="NexusAI">
+            </div>
+            <h1>كيف يمكنني مساعدتك اليوم؟</h1>
+            <p>منصة AI Agent المتكاملة. اسألني عن أي شيء، أو جرب أحد الاقتراحات أدناه.</p>
+            <div class="suggestions-grid">
+              <div class="suggestion-card" onclick="fillInput('اعمل موقع بسيط لمتجر إلكتروني باستخدام HTML وCSS وJavaScript')">
+                <div class="sug-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect></svg>
+                  صنع مواقع
+                </div>
+                <p>اعمل موقع بسيط لمتجر إلكتروني</p>
+              </div>
+              <div class="suggestion-card" onclick="fillInput('اكتب كود Python لتحليل ملف CSV وعرض إحصاءات المبيعات')">
+                <div class="sug-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  برمجة
+                </div>
+                <p>كود Python لتحليل بيانات المبيعات</p>
+              </div>
+              <div class="suggestion-card" onclick="fillInput('لخص لي هذا المفهوم: الشبكات العصبية الاصطناعية وكيف تعمل')">
+                <div class="sug-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"></path></svg>
+                  تلخيص
+                </div>
+                <p>شرح الشبكات العصبية الاصطناعية</p>
+              </div>
+              <div class="suggestion-card" onclick="fillInput('ساعدني في كتابة خطة عمل لمشروع تقني ناشئ في مجال AI')">
+                <div class="sug-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  كتابة
+                </div>
+                <p>خطة عمل لمشروع AI ناشئ</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div id="input-area">
+        <div class="input-container">
+          <div class="input-box" id="input-box">
+            <div class="file-preview" id="file-preview" style="display:none"></div>
+            <div class="input-top">
+              <textarea id="chat-input" placeholder="اسألني أي شيء..." rows="1"
+                onkeydown="handleKey(event)"
+                oninput="autoResize(this)"></textarea>
+              <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </div>
+            <div class="input-bottom">
+              <label class="input-action" style="cursor:pointer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                <input type="file" style="display:none" onchange="handleFile(this)">
+                رفع ملف
+              </label>
+              <button class="input-action" id="agent-btn" onclick="toggleAgent()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path></svg>
+                Agent Mode
+              </button>
+              <button class="input-action active" id="search-btn" onclick="toggleSearch()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                بحث متقدم
+              </button>
+              <span class="input-hint">Shift+Enter للسطر الجديد</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: PROJECTS ── -->
+    <div class="page" id="page-projects">
+      <div class="page-inner">
+        <div class="page-header">
+          <h1>مشاريعي</h1>
+          <p>إدارة ومتابعة جميع مشاريعك في مكان واحد</p>
+        </div>
+        <div class="projects-grid">
+          <div class="new-project-card" onclick="showToast('إنشاء مشروع جديد...')">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span style="font-size:13px;font-weight:500">مشروع جديد</span>
+          </div>
+          <div class="project-card" onclick="navigate('chat');showToast('تحميل مشروع المتجر الإلكتروني')">
+            <div class="project-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect></svg>
+            </div>
+            <div class="project-name">متجر إلكتروني</div>
+            <div class="project-desc">موقع تجارة إلكترونية بـ React وTailwind</div>
+            <div class="project-meta">
+              <span class="project-badge">React</span>
+              <span class="project-badge">In Progress</span>
+              <span class="project-date">منذ يومين</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="navigate('chat');showToast('تحميل مشروع تحليل البيانات')">
+            <div class="project-icon" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.2)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="project-name">تحليل بيانات المبيعات</div>
+            <div class="project-desc">داشبورد Python لتحليل وعرض بيانات المبيعات</div>
+            <div class="project-meta">
+              <span class="project-badge">Python</span>
+              <span class="project-badge" style="color:#4ade80">مكتمل</span>
+              <span class="project-date">منذ أسبوع</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="navigate('chat');showToast('تحميل مشروع API')">
+            <div class="project-icon" style="background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.2)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5c842" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"></path></svg>
+            </div>
+            <div class="project-name">REST API Backend</div>
+            <div class="project-desc">Node.js API مع قاعدة بيانات PostgreSQL</div>
+            <div class="project-meta">
+              <span class="project-badge">Node.js</span>
+              <span class="project-badge" style="color:#fbbf24">قيد التطوير</span>
+              <span class="project-date">منذ 3 أيام</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="navigate('chat');showToast('تحميل مشروع تطبيق الجوال')">
+            <div class="project-icon" style="background:rgba(74,222,128,0.08);border-color:rgba(74,222,128,0.2)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+            </div>
+            <div class="project-name">تطبيق جوال</div>
+            <div class="project-desc">React Native app لإدارة المهام اليومية</div>
+            <div class="project-meta">
+              <span class="project-badge">React Native</span>
+              <span class="project-badge">مخطط</span>
+              <span class="project-date">منذ 5 أيام</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: SETTINGS ── -->
+    <div class="page" id="page-settings">
+      <div class="settings-layout">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="showSettingsTab(this,'profile')">الملف الشخصي</div>
+          <div class="settings-nav-item" onclick="showSettingsTab(this,'api')">مفاتيح API</div>
+          <div class="settings-nav-item" onclick="showSettingsTab(this,'github')">GitHub</div>
+          <div class="settings-nav-item" onclick="showSettingsTab(this,'appearance')">المظهر</div>
+          <div class="settings-nav-item" onclick="showSettingsTab(this,'plan')">الخطة</div>
+        </div>
+        <div class="settings-content" id="settings-content">
+          <!-- Profile tab -->
+          <div id="settings-profile">
+            <div class="settings-section">
+              <h2>معلومات الحساب</h2>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">الاسم</div>
+                  <div class="setting-desc">اسمك الظاهر في المنصة</div>
+                </div>
+                <input class="settings-input" type="text" placeholder="أدخل اسمك" value="مستخدم NexusAI">
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">البريد الإلكتروني</div>
+                  <div class="setting-desc">email@example.com</div>
+                </div>
+                <input class="settings-input" type="email" placeholder="بريدك الإلكتروني">
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">الخطة الحالية</div>
+                  <div class="setting-desc">الخطة المجانية — 500 رسالة/شهر</div>
+                </div>
+                <button class="settings-btn primary" onclick="navigate('pricing')">ترقية للـ Pro</button>
+              </div>
+            </div>
+            <div class="settings-section">
+              <h2>منطقة الخطر</h2>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">حذف الحساب</div>
+                  <div class="setting-desc">حذف حسابك وجميع بياناتك نهائياً</div>
+                </div>
+                <button class="settings-btn danger" onclick="showToast('هذه الميزة تتطلب تأكيداً')">حذف الحساب</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- API keys tab -->
+          <div id="settings-api" style="display:none">
+            <div class="settings-section">
+              <h2>مفاتيح API</h2>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">مفتاح OpenRouter</div>
+                  <div class="setting-desc">للوصول لنماذج إضافية</div>
+                </div>
+                <input class="settings-input" type="password" placeholder="sk-or-...">
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">مفتاح Anthropic</div>
+                  <div class="setting-desc">Claude API Key</div>
+                </div>
+                <input class="settings-input" type="password" placeholder="sk-ant-...">
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">مفتاح Groq</div>
+                  <div class="setting-desc">للنماذج السريعة</div>
+                </div>
+                <input class="settings-input" type="password" placeholder="gsk_...">
+              </div>
+              <div style="margin-top:16px">
+                <button class="settings-btn primary" onclick="showToast('تم حفظ المفاتيح بنجاح')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  حفظ المفاتيح
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub tab -->
+          <div id="settings-github" style="display:none">
+            <div class="settings-section">
+              <h2>ربط GitHub</h2>
+              <div class="github-connect-card">
+                <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                <div style="flex:1">
+                  <div style="font-size:15px;font-weight:600;margin-bottom:4px">ربط حساب GitHub</div>
+                  <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">استعرض مستودعاتك وادفع كوداً مباشرة</div>
+                  <button class="settings-btn primary" onclick="showToast('جارٍ الاتصال بـ GitHub...')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    ربط GitHub
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Appearance tab -->
+          <div id="settings-appearance" style="display:none">
+            <div class="settings-section">
+              <h2>المظهر والواجهة</h2>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">الوضع الداكن</div>
+                  <div class="setting-desc">الوضع الحالي: داكن</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">لغة الواجهة</div>
+                  <div class="setting-desc">العربية</div>
+                </div>
+                <select class="settings-input" style="width:auto;padding:6px 10px">
+                  <option>العربية</option>
+                  <option>English</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">الرسائل المتدفقة</div>
+                  <div class="setting-desc">عرض الردود كلمة بكلمة</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">حجم الخط</div>
+                  <div class="setting-desc">حجم نص المحادثة</div>
+                </div>
+                <select class="settings-input" style="width:auto;padding:6px 10px">
+                  <option>صغير</option>
+                  <option selected>متوسط</option>
+                  <option>كبير</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan tab -->
+          <div id="settings-plan" style="display:none">
+            <div class="settings-section">
+              <h2>خطتك الحالية</h2>
+              <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+                <div style="font-size:18px;font-weight:700;margin-bottom:6px">الخطة المجانية</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">500 رسالة شهرياً — تُجدد في 1 يونيو</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <div style="flex:1;height:6px;background:var(--bg-active);border-radius:99px;overflow:hidden">
+                    <div style="width:23%;height:100%;background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));border-radius:99px"></div>
+                  </div>
+                  <span style="font-size:12px;color:var(--text-secondary)">113 / 500</span>
+                </div>
+                <button class="settings-btn primary" onclick="navigate('pricing')" style="margin-top:12px">
+                  ترقية للـ Pro — 9$ / شهر
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: PRICING ── -->
+    <div class="page" id="page-pricing">
+      <div class="page-inner" style="overflow-y:auto">
+        <div class="page-header" style="text-align:center;max-width:600px;margin:0 auto 36px">
+          <h1>اختر خطتك المناسبة</h1>
+          <p>ابدأ مجاناً وقم بالترقية عندما تحتاج إلى المزيد من القوة</p>
+        </div>
+        <div class="pricing-grid">
+          <!-- Free -->
+          <div class="pricing-card">
+            <div class="pricing-name" style="color:var(--text-secondary)">المجاني</div>
+            <div class="pricing-price">$0 <span>/ شهر</span></div>
+            <div class="pricing-desc">مثالي للاستخدام الشخصي والتجربة</div>
+            <ul class="pricing-features">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                500 رسالة / شهر
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                نموذج Nexus-Mini
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                مشروع واحد
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                رفع ملفات حتى 5MB
+              </li>
+              <li style="opacity:0.35">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                Agent Mode
+              </li>
+              <li style="opacity:0.35">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                ربط GitHub
+              </li>
+            </ul>
+            <button class="pricing-btn outline" onclick="showToast('أنت على الخطة المجانية')">الخطة الحالية</button>
+          </div>
+
+          <!-- Pro -->
+          <div class="pricing-card popular">
+            <div class="popular-badge">الأكثر شيوعاً</div>
+            <div class="pricing-name" style="color:var(--accent-blue)">Pro</div>
+            <div class="pricing-price" style="background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">$9 <span style="-webkit-text-fill-color:var(--text-muted)">/ شهر</span></div>
+            <div class="pricing-desc">للمطورين والمحترفين</div>
+            <ul class="pricing-features">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                رسائل غير محدودة
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                جميع النماذج (Qwen3-32B, GPT-OSS-120B)
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                مشاريع غير محدودة
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Agent Mode كامل
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                ربط GitHub
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                رفع ملفات حتى 100MB
+              </li>
+            </ul>
+            <button class="pricing-btn gradient" onclick="openModal('auth-modal')">ابدأ تجربة 7 أيام مجاناً</button>
+          </div>
+
+          <!-- Enterprise -->
+          <div class="pricing-card">
+            <div class="pricing-name" style="color:#a78bfa">Enterprise</div>
+            <div class="pricing-price">$49 <span>/ شهر</span></div>
+            <div class="pricing-desc">للفرق والشركات</div>
+            <ul class="pricing-features">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                كل ميزات Pro
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                حتى 20 مستخدم
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                لوحة إدارة الفريق
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                API مخصص
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                دعم أولوية 24/7
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                تخصيص كامل للنموذج
+              </li>
+            </ul>
+            <button class="pricing-btn outline" onclick="showToast('سنتواصل معك قريباً')">تواصل معنا</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════ -->
+<!-- Auth Modal -->
+<div class="overlay" id="auth-modal" onclick="closeOnOverlay(event,'auth-modal')">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('auth-modal')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <div style="text-align:center;margin-bottom:20px">
+      <img src="assets/nexusai_logo_white.svg" width="72" height="72" alt="NexusAI" style="margin:0 auto 12px;display:block">
+      <h2>مرحباً بك في NexusAI</h2>
+      <p>سجل دخول للحصول على تجربة كاملة وحفظ محادثاتك</p>
+    </div>
+    <button class="auth-btn google" onclick="showToast('جارٍ تسجيل الدخول بـ Google...');closeModal('auth-modal')">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      تسجيل الدخول بـ Google
+    </button>
+    <button class="auth-btn guest" onclick="showToast('تم الدخول كضيف');closeModal('auth-modal')">
+      المتابعة كضيف
+    </button>
+    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px">
+      بالتسجيل توافق على شروط الخدمة وسياسة الخصوصية
+    </p>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  <span id="toast-text">تم بنجاح</span>
+</div>
+
+<!-- Context menu -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-item" onclick="copyMessage();closeCtx()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+    نسخ الرسالة
+  </div>
+  <div class="ctx-item" onclick="showToast('تم تعديل الرسالة');closeCtx()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+    تعديل الرسالة
+  </div>
+  <div class="divider" style="margin:4px 0"></div>
+  <div class="ctx-item danger" onclick="showToast('تم الحذف');closeCtx()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+    حذف الرسالة
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════ -->
+<script>
+// ─── STATE ───────────────────────────────────────────
+let currentPage = 'chat';
+let isAgentMode = false;
+let isSearchMode = true;
+let currentModel = 'Qwen3-32B';
+let isStreaming = false;
+let attachedFiles = [];
+let sidebarOpen = true;
+
+// ─── NAVIGATION ───────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  currentPage = page;
+
+  const titles = { chat: 'NexusAI', projects: 'مشاريعي', settings: 'الإعدادات', pricing: 'الأسعار' };
+  document.getElementById('page-title').textContent = titles[page] || 'NexusAI';
+
+  // Show/hide model selector
+  document.getElementById('model-selector').style.display = page === 'chat' ? 'flex' : 'none';
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 700) {
+    sb.classList.toggle('open');
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+}
+
+function switchPanel(panel, btn) {
+  document.querySelectorAll('.nav-icon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+}
+
+// ─── MODEL SELECTOR ────────────────────────────────────
+function toggleModelDropdown() {
+  event.stopPropagation();
+  document.getElementById('model-dropdown').classList.toggle('open');
+}
+
+function selectModel(name, el) {
+  event.stopPropagation();
+  currentModel = name;
+  document.getElementById('current-model').textContent = name;
+  document.querySelectorAll('.model-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('model-dropdown').classList.remove('open');
+  // Update model icon in the selector bar
+  const srcMap = { 'Qwen3-32B': 'qwen_logo.svg', 'GPT-OSS-120B': 'openai_logo.svg', 'Nexus-Mini': 'nexusai_logo_white.svg' };
+  const icon = document.getElementById('model-icon');
+  if (icon && srcMap[name]) icon.src = srcMap[name];
+  showToast('تم اختيار ' + name);
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('model-dropdown').classList.remove('open');
+  closeCtx();
+});
+
+// ─── CHAT ──────────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = '24px';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+function fillInput(text) {
+  const inp = document.getElementById('chat-input');
+  inp.value = text;
+  inp.focus();
+  autoResize(inp);
+}
+
+function newChat() {
+  document.getElementById('messages-inner').innerHTML = `
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-logo">
+        <img src="assets/nexusai_logo_white.svg" width="140" height="140" alt="NexusAI">
+      </div>
+      <h1>كيف يمكنني مساعدتك اليوم؟</h1>
+      <p>منصة AI Agent المتكاملة. اسألني عن أي شيء.</p>
+      <div class="suggestions-grid">
+        <div class="suggestion-card" onclick="fillInput('اعمل موقع بسيط لمتجر إلكتروني باستخدام HTML وCSS وJavaScript')">
+          <div class="sug-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect></svg> صنع مواقع</div>
+          <p>اعمل موقع بسيط لمتجر إلكتروني</p>
+        </div>
+        <div class="suggestion-card" onclick="fillInput('اكتب كود Python لتحليل ملف CSV وعرض إحصاءات المبيعات')">
+          <div class="sug-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> برمجة</div>
+          <p>كود Python لتحليل بيانات المبيعات</p>
+        </div>
+        <div class="suggestion-card" onclick="fillInput('لخص لي هذا المفهوم: الشبكات العصبية الاصطناعية وكيف تعمل')">
+          <div class="sug-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"></path></svg> تلخيص</div>
+          <p>شرح الشبكات العصبية الاصطناعية</p>
+        </div>
+        <div class="suggestion-card" onclick="fillInput('ساعدني في كتابة خطة عمل لمشروع تقني ناشئ في مجال AI')">
+          <div class="sug-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> كتابة</div>
+          <p>خطة عمل لمشروع AI ناشئ</p>
+        </div>
+      </div>
+    </div>`;
+  attachedFiles = [];
+  updateFilePreview();
+  navigate('chat');
+  addConvToList('محادثة جديدة');
+}
+
+function loadConv(el, title) {
+  document.querySelectorAll('.conv-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  navigate('chat');
+  document.getElementById('page-title').textContent = title;
+}
+
+function addConvToList(title) {
+  const list = document.getElementById('conv-list');
+  const item = document.createElement('div');
+  item.className = 'conv-item active';
+  item.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>${title}</span>`;
+  item.onclick = () => loadConv(item, title);
+  document.querySelectorAll('.conv-item').forEach(c => c.classList.remove('active'));
+
+  // Insert after group label if exists
+  const labels = list.querySelectorAll('.conv-group-label');
+  if (labels.length > 0) {
+    labels[0].after(item);
+  } else {
+    list.prepend(item);
+  }
+}
+
+// ─── MESSAGE SENDING ───────────────────────────────────
+async function sendMessage() {
+  if (isStreaming) return;
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text && attachedFiles.length === 0) return;
+
+  // Hide welcome
+  const welcome = document.getElementById('welcome-screen');
+  if (welcome) welcome.remove();
+
+  // Add user message
+  addUserMessage(text, [...attachedFiles]);
+  inp.value = '';
+  inp.style.height = '24px';
+  attachedFiles = [];
+  updateFilePreview();
+
+  // Add to conv list if new
+  if (text.length > 0) addConvToList(text.substring(0, 30) + (text.length > 30 ? '...' : ''));
+
+  // Show typing
+  const typingId = addTypingIndicator(isSearchMode);
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Show search banner if active
+  if (isSearchMode) {
+    document.getElementById('search-banner').classList.add('active');
+  }
+
+  // Simulate AI response
+  setTimeout(async () => {
+    try {
+      document.getElementById(typingId)?.remove();
+      if (isSearchMode) {
+        await streamDeepResearch(text);
+      } else {
+        await streamAIResponse(text);
+      }
+    } catch (e) {
+      console.error('AI response error:', e);
+    }
+    isStreaming = false;
+    document.getElementById('send-btn').disabled = false;
+  }, isSearchMode ? 1500 + Math.random() * 500 : 800 + Math.random() * 400);
+}
+
+function addUserMessage(text, files) {
+  const container = document.getElementById('messages-inner');
+  const div = document.createElement('div');
+  div.className = 'message user';
+
+  let fileHtml = '';
+  if (files.length > 0) {
+    fileHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">` +
+      files.map(f => `<div class="file-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>${f}</div>`).join('') +
+      `</div>`;
+  }
+
+  div.innerHTML = `<div class="message-bubble">${fileHtml}${escapeHtml(text).replace(/\n/g,'<br>')}</div>`;
+  container.appendChild(div);
+  scrollToBottom();
+}
+
+function addTypingIndicator(isResearch) {
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message ai-message typing-message';
+  typingDiv.id = 'typing-indicator';
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'ai-avatar';
+  avatar.innerHTML = `<img src="assets/nexusai_logo_white.svg" width="36" height="36" alt="NexusAI">`;
+  
+  const content = document.createElement('div');
+  content.className = 'message-content';
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble typing-bubble';
+  if (isResearch) {
+    bubble.style.display = 'flex';
+    bubble.style.alignItems = 'center';
+    bubble.style.gap = '8px';
+    bubble.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> جارٍ البحث المتقدم...<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  } else {
+    bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  }
+  
+  content.appendChild(bubble);
+  typingDiv.appendChild(avatar);
+  typingDiv.appendChild(content);
+  
+  const messagesContainer = document.getElementById('chat-messages');
+  messagesContainer.appendChild(typingDiv);
+  scrollToBottom();
+  return 'typing-indicator';
+}
+
+async function streamDeepResearch(userMsg) {
+  const container = document.getElementById('messages-inner');
+  const div = document.createElement('div');
+  div.className = 'message ai';
+
+  const response = generateDeepResearch(userMsg);
+
+  div.innerHTML = `
+    <div class="ai-avatar">
+      <img src="assets/nexusai_logo_white.svg" width="36" height="36" alt="NexusAI">
+    </div>
+    <div class="message-bubble">
+      <div class="research-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        بحث متقدم
+      </div>
+      <div class="ai-content" id="ai-stream-${Date.now()}"></div>
+      <div class="message-actions">
+        <button class="msg-action-btn" onclick="copyText(this.closest('.message'))">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          نسخ
+        </button>
+        <button class="msg-action-btn" onclick="showToast('جارٍ التجديد...');this.closest('.message').remove()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          تجديد
+        </button>
+      </div>
+    </div>`;
+  container.appendChild(div);
+
+  const contentEl = div.querySelector('.ai-content');
+  scrollToBottom();
+
+  await typeText(contentEl, response);
+  scrollToBottom();
+}
+
+function generateDeepResearch(msg) {
+  const lower = msg.toLowerCase();
+
+  return `## نتيجة البحث المتقدم 🔍
+
+بعد البحث والتحليل العميق لسؤالك، إليك الإجابة المفصلة:
+
+### ملخص سريع
+أجريت بحثاً متقدماً في قاعدة المعرفة الخاصة بي حول "${msg}"، وقمت بتحليل المعلومات من مصادر متعددة لتقديم إجابة شاملة.
+
+### التفاصيل الكاملة
+
+**${msg}** هو موضوع مهم يمكن تفصيله كما يلي:
+
+1. **المقدمة**: هذا الموضوع يتعلق بمجال واسع يشمل عدة جوانب تقنية وعملية.
+2. **المفاهيم الأساسية**: يعتمد على مجموعة من المبادئ والأسس التي يجب فهمها أولاً.
+3. **التطبيقات العملية**: يمكن تطبيق هذا الموضوع في عدة مجالات منها البرمجة والتطوير والتحليل.
+4. **أفضل الممارسات**: لضمان أفضل النتائج، يُنصح باتباع الخطوات والمنهجيات الموثقة.
+
+### معلومات إضافية
+- تم جمع المعلومات من قاعدة المعرفة
+- التحليل يعتمد على أحدث البيانات المتاحة
+- يمكنك طلب تفاصيل إضافية عن أي نقطة
+
+> هل تريد التعمق في جانب معين من هذا الموضوع؟`;
+}
+
+async function streamAIResponse(userMsg) {
+  const container = document.getElementById('messages-inner');
+  const div = document.createElement('div');
+  div.className = 'message ai';
+
+  // Generate response based on user message
+  const response = generateResponse(userMsg);
+
+  div.innerHTML = `
+    <div class="ai-avatar">
+      <img src="assets/nexusai_logo_white.svg" width="36" height="36" alt="NexusAI">
+    </div>
+    <div class="message-bubble">
+      <div class="ai-content" id="ai-stream-${Date.now()}"></div>
+      <div class="message-actions">
+        <button class="msg-action-btn" onclick="copyText(this.closest('.message'))">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          نسخ
+        </button>
+        <button class="msg-action-btn" onclick="showToast('جارٍ التجديد...');this.closest('.message').remove()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          تجديد
+        </button>
+      </div>
+    </div>`;
+  container.appendChild(div);
+
+  const contentEl = div.querySelector('.ai-content');
+  scrollToBottom();
+
+  // Stream the response
+  await typeText(contentEl, response);
+  scrollToBottom();
+}
+
+function generateResponse(msg) {
+  const lower = msg.toLowerCase();
+  const isCode = lower.includes('كود') || lower.includes('python') || lower.includes('html') || lower.includes('javascript') || lower.includes('موقع') || lower.includes('برمج');
+  const isAnalysis = lower.includes('تحلي') || lower.includes('بيانات') || lower.includes('csv');
+  const isExplain = lower.includes('شرح') || lower.includes('لخص') || lower.includes('ما هو') || lower.includes('ما هي');
+
+  if (lower.includes('موقع') || lower.includes('html')) {
+    return `بالتأكيد! سأبني لك موقعاً متكاملاً. دعني أشرح الخطة أولاً:
+
+## هيكل الموقع
+
+سنبني الموقع بـ **HTML5 + CSS3 + JavaScript** نظيف بدون frameworks لأقصى سرعة.
+
+<code-block language="html">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>متجري الإلكتروني</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .navbar { background: #1a1a2e; color: white; padding: 16px 24px; display: flex; justify-content: space-between; }
+    .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 20px; padding: 24px; }
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .card img { width: 100%; height: 180px; object-fit: cover; background: #ddd; }
+    .card-body { padding: 16px; }
+    .btn { background: #00d4ff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <h1>متجري</h1>
+    <div>سلة التسوق (0)</div>
+  </nav>
+  <div class="products" id="products"></div>
+  <script>
+    const items = [
+      { name: 'منتج 1', price: 99, img: 'https://via.placeholder.com/240x180' },
+      { name: 'منتج 2', price: 149, img: 'https://via.placeholder.com/240x180' },
+      { name: 'منتج 3', price: 199, img: 'https://via.placeholder.com/240x180' },
+    ];
+    document.getElementById('products').innerHTML = items.map(i => \`
+      <div class="card">
+        <img src="\${i.img}" alt="\${i.name}">
+        <div class="card-body">
+          <h3>\${i.name}</h3>
+          <p style="color:#666;margin:8px 0">\${i.price} ريال</p>
+          <button class="btn">أضف للسلة</button>
+        </div>
+      </div>
+    \`).join('');
+  <\/script>
+</body>
+</html>
+</code-block>
+
+### ما يمكن إضافته لاحقاً:
+- نظام تسجيل دخول كامل
+- قاعدة بيانات للمنتجات
+- سلة تسوق وعملية دفع
+- لوحة إدارة المنتجات`;
+  }
+
+  if (isCode || lower.includes('python')) {
+    return `سأكتب لك الكود المطلوب:
+
+## كود Python لتحليل البيانات
+
+<code-block language="python">
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+def analyze_sales(filepath: str):
+    """تحليل بيانات المبيعات من ملف CSV"""
+    
+    # قراءة الملف
+    df = pd.read_csv(filepath)
+    
+    # تنظيف البيانات
+    df['date'] = pd.to_datetime(df['date'])
+    df['revenue'] = df['price'] * df['quantity']
+    
+    # إحصاءات عامة
+    stats = {
+        'إجمالي المبيعات': df['revenue'].sum(),
+        'متوسط الصفقة': df['revenue'].mean(),
+        'أعلى يوم مبيعات': df.groupby('date')['revenue'].sum().idxmax(),
+        'أكثر منتج مبيعاً': df.groupby('product')['quantity'].sum().idxmax()
+    }
+    
+    # رسم بياني
+    monthly = df.groupby(df['date'].dt.month)['revenue'].sum()
+    plt.figure(figsize=(10, 5))
+    plt.bar(monthly.index, monthly.values, color='#00d4ff')
+    plt.title('المبيعات الشهرية')
+    plt.xlabel('الشهر')
+    plt.ylabel('الإيراد')
+    plt.savefig('sales_report.png', dpi=150, bbox_inches='tight')
+    
+    return stats
+
+# تشغيل التحليل
+results = analyze_sales('sales.csv')
+for k, v in results.items():
+    print(f"{k}: {v}")
+</code-block>
+
+**كيفية الاستخدام:**
+1. تأكد من تثبيت المكتبات: \`pip install pandas matplotlib\`
+2. ضع ملف \`sales.csv\` في نفس المجلد
+3. شغل: \`python analyze.py\`
+
+ستحصل على تقرير مع رسم بياني محفوظ تلقائياً.`;
+  }
+
+  if (isExplain || lower.includes('شبكات عصبية') || lower.includes('ذكاء')) {
+    return `## الشبكات العصبية الاصطناعية
+
+الشبكات العصبية هي نظام حاسوبي مستوحى من **الدماغ البشري**، تتكون من عقد ترابطية تعالج المعلومات بطريقة مشابهة للخلايا العصبية.
+
+### كيف تعمل؟
+
+**1. طبقة الإدخال (Input Layer)**
+تستقبل البيانات الخام — كالصور أو النصوص أو الأرقام.
+
+**2. الطبقات المخفية (Hidden Layers)**
+تعالج البيانات عبر عمليات رياضية متسلسلة، كل طبقة تتعلم ميزات أكثر تعقيداً.
+
+**3. طبقة الإخراج (Output Layer)**
+تعطي النتيجة النهائية — كتصنيف صورة أو ترجمة نص.
+
+### المفاهيم الأساسية:
+
+| المفهوم | الشرح |
+|---------|-------|
+| الأوزان (Weights) | أهمية كل اتصال بين العقد |
+| التدريب (Training) | تعديل الأوزان بناءً على الأخطاء |
+| دالة التفعيل | تحديد إذا "تنشط" العقدة أم لا |
+| Backpropagation | خوارزمية تصحيح الأخطاء للخلف |
+
+### التطبيقات:
+- التعرف على الوجوه والصور
+- الترجمة الآلية
+- توليد النصوص (مثل ChatGPT وأنا!)
+- قيادة السيارات ذاتياً
+
+هل تريد شرحاً أعمق لأي جانب؟`;
+  }
+
+  // Default response
+  return `شكراً على سؤالك! أنا **NexusAI**، منصة الذكاء الاصطناعي المتكاملة.
+
+يمكنني مساعدتك في:
+
+- **البرمجة** — Python, JavaScript, React, و أكثر
+- **صنع المواقع** — من الفكرة للكود الكامل
+- **تحليل البيانات** — معالجة وعرض البيانات
+- **الكتابة** — مقالات، تقارير، خطط عمل
+- **الترجمة** — بين العربية والإنجليزية وغيرها
+- **Agent Mode** — تنفيذ مهام متعددة تلقائياً
+
+ما الذي تريد العمل عليه اليوم؟`;
+}
+
+async function typeText(el, markdown) {
+  const html = parseMarkdown(markdown);
+  el.innerHTML = '';
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  const fullText = temp.innerHTML;
+
+  // Stream with safe boundaries — never split tags or entities
+  let i = 0;
+  const chars = fullText.split('');
+  return new Promise(resolve => {
+    function step() {
+      if (i < chars.length) {
+        if (chars[i] === '<') {
+          let tag = '';
+          while (i < chars.length && chars[i] !== '>') { tag += chars[i]; i++; }
+          if (i < chars.length) { tag += '>'; i++; }
+          el.innerHTML += tag;
+        } else if (chars[i] === '&') {
+          let entity = '';
+          while (i < chars.length && chars[i] !== ';') { entity += chars[i]; i++; }
+          if (i < chars.length) { entity += ';'; i++; }
+          el.innerHTML += entity;
+        } else {
+          // Take up to 3 chars, but stop before '<' or '&'
+          let chunk = '';
+          for (let j = 0; j < 3 && i < chars.length; j++) {
+            if (chars[i] === '<' || chars[i] === '&') break;
+            chunk += chars[i]; i++;
+          }
+          el.innerHTML += chunk;
+        }
+        scrollToBottom();
+        setTimeout(step, 8);
+      } else {
+        el.innerHTML = fullText;
+        scrollToBottom();
+        resolve();
+      }
+    }
+    step();
+  });
+}
+
+function parseMarkdown(text) {
+  // Code blocks first
+  text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    return `<div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">${lang || 'code'}</span>
+        <button class="copy-code-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          نسخ
+        </button>
+      </div>
+      <pre><code>${escapeHtml(code.trim())}</code></pre>
+    </div>`;
+  });
+
+  // Custom code-block tag
+  text = text.replace(/<code-block language="(\w*)">\n([\s\S]*?)<\/code-block>/g, (_, lang, code) => {
+    return `<div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">${lang}</span>
+        <button class="copy-code-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          نسخ
+        </button>
+      </div>
+      <pre><code>${escapeHtml(code.trim())}</code></pre>
+    </div>`;
+  });
+
+  text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+  text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Tables
+  text = text.replace(/\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)*)/g, (_, header, rows) => {
+    const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
+    const trs = rows.trim().split('\n').map(row => {
+      const tds = row.split('|').filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join('');
+      return `<tr>${tds}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+
+  // Lists
+  text = text.replace(/^- (.*$)/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+
+  // Numbered lists
+  text = text.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+
+  // Paragraphs
+  text = text.split('\n\n').map(p => {
+    if (p.startsWith('<') || p.trim() === '') return p;
+    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('');
+
+  return text;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('chat-messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── FILE HANDLING ─────────────────────────────────────
+function handleFile(input) {
+  const files = Array.from(input.files);
+  files.forEach(f => {
+    if (!attachedFiles.includes(f.name)) {
+      attachedFiles.push(f.name);
+    }
+  });
+  updateFilePreview();
+  input.value = '';
+}
+
+function updateFilePreview() {
+  const el = document.getElementById('file-preview');
+  if (attachedFiles.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = attachedFiles.map((f, i) => `
+    <div class="file-chip">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      ${f}
+      <button onclick="removeFile(${i})">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>`).join('');
+}
+
+function removeFile(i) { attachedFiles.splice(i, 1); updateFilePreview(); }
+
+// ─── AGENT MODE ────────────────────────────────────────
+function toggleAgent() {
+  if (!isLoggedIn) { showLoginToast(); return; }
+  isAgentMode = !isAgentMode;
+  const btn = document.getElementById('agent-btn');
+  const banner = document.getElementById('agent-banner');
+  if (isAgentMode) {
+    btn.classList.add('active');
+    banner.classList.add('active');
+    showToast('Agent Mode مفعّل');
+  } else {
+    btn.classList.remove('active');
+    banner.classList.remove('active');
+    showToast('Agent Mode معطّل');
+  }
+}
+
+function deactivateAgent() {
+  isAgentMode = false;
+  document.getElementById('agent-btn').classList.remove('active');
+  document.getElementById('agent-banner').classList.remove('active');
+}
+
+function toggleSearch() {
+  if (!isLoggedIn) { showLoginToast(); return; }
+  isSearchMode = !isSearchMode;
+  const btn = document.getElementById('search-btn');
+  const banner = document.getElementById('search-banner');
+  if (isSearchMode) {
+    btn.classList.add('active');
+    banner.classList.add('active');
+    showToast('البحث المتقدم نشط');
+  } else {
+    btn.classList.remove('active');
+    banner.classList.remove('active');
+    showToast('تم إيقاف البحث المتقدم');
+  }
+}
+
+function deactivateSearch() {
+  isSearchMode = false;
+  document.getElementById('search-btn').classList.remove('active');
+  document.getElementById('search-banner').classList.remove('active');
+}
+
+// ─── SKILLS ────────────────────────────────────────────
+function activateSkill(name) {
+  navigate('chat');
+  showToast('Skill "' + name + '" مفعّل');
+  const inp = document.getElementById('chat-input');
+
+  const prompts = {
+    'تلخيص': 'لخص لي النص التالي في نقاط واضحة:\n\n',
+    'برمجة بايثون': 'اكتب لي كود Python يقوم بـ: ',
+    'صنع مواقع': 'اعمل لي موقع ويب بـ HTML/CSS/JS يقوم بـ: ',
+    'تحليل بيانات': 'حلل لي هذه البيانات وأعطني إحصاءات وتوصيات:\n\n',
+    'الترجمة': 'ترجم النص التالي للإنجليزية:\n\n',
+    'Agent Mode': ''
+  };
+
+  if (name === 'Agent Mode') {
+    toggleAgent();
+  } else {
+    inp.value = prompts[name] || '';
+    inp.focus();
+    autoResize(inp);
+  }
+}
+
+// ─── SETTINGS TABS ─────────────────────────────────────
+function showSettingsTab(el, tab) {
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  ['profile','api','github','appearance','plan'].forEach(t => {
+    const el2 = document.getElementById('settings-' + t);
+    if (el2) el2.style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+// ─── MODALS ────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeOnOverlay(e, id) { if (e.target.id === id) closeModal(id); }
+
+// ─── TOAST ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── COPY ──────────────────────────────────────────────
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('تم نسخ الكود'));
+}
+
+function copyText(msgEl) {
+  const text = msgEl.querySelector('.ai-content')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => showToast('تم نسخ الرسالة'));
+}
+
+function copyMessage() {
+  showToast('تم نسخ الرسالة');
+}
+
+// ─── CONTEXT MENU ──────────────────────────────────────
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('.message')) {
+    e.preventDefault();
+    const menu = document.getElementById('ctx-menu');
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.classList.add('open');
+  }
+});
+
+function closeCtx() { document.getElementById('ctx-menu').classList.remove('open'); }
+
+// ─── FOLDER TOGGLE ─────────────────────────────────────
+function toggleFolder(el) {
+  const next = el.nextElementSibling;
+  if (next && next.classList.contains('file-indent')) {
+    next.style.display = next.style.display === 'none' ? '' : 'none';
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  navigate('chat');
+  document.getElementById('search-banner').classList.add('active');
+  // Start open modal on first load after a delay
+  setTimeout(() => {
+    // Don't auto-open, let user explore
+  }, 2000);
+});
+
+// Mobile sidebar close on outside click
+document.addEventListener('click', e => {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 700 && sb.classList.contains('open') && !sb.contains(e.target)) {
+    sb.classList.remove('open');
+  }
+});
+
+// ─── AUTH & CONVERSATIONS ──────────────────────────────
+let isLoggedIn = false;
+let currentUser = null;
+let currentConvId = null;
+let convMessages = [];
+
+function showLoginToast() {
+  showToast('يجب تسجيل الدخول أولاً');
+  setTimeout(() => window.location.href = '/login.html', 1200);
+}
+
+function showLoginPrompt() {
+  window.location.href = '/login.html';
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    isLoggedIn = data.authenticated;
+    currentUser = data.user || null;
+  } catch { isLoggedIn = false; }
+
+  const area = document.getElementById('user-area');
+  if (isLoggedIn && currentUser) {
+    const initial = (currentUser.name || 'مستخدم').charAt(0);
+    area.innerHTML = `
+      <div class="user-pill" onclick="openModal('auth-modal')">
+        <div class="user-avatar" style="background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple))">${initial}</div>
+        <div class="user-info">
+          <div class="user-name">${currentUser.name}</div>
+          <div class="user-plan">${currentUser.provider === 'google' ? 'Google' : 'GitHub'} • مدفوع</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--text-muted)"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>`;
+    document.getElementById('save-indicator').textContent = '✓ محفوظ';
+    loadConversations();
+  } else {
+    document.getElementById('save-indicator').textContent = '';
+    isSearchMode = false;
+    isAgentMode = false;
+    document.getElementById('search-banner')?.classList.remove('active');
+    document.getElementById('agent-banner')?.classList.remove('active');
+  }
+}
+
+async function loadConversations() {
+  try {
+    const res = await fetch('/api/conversations');
+    const convs = await res.json();
+    const list = document.getElementById('conv-list');
+    if (!list) return;
+    if (convs.length === 0) {
+      list.innerHTML = '<div style="padding:20px 10px;text-align:center;color:var(--text-muted);font-size:13px">لا توجد محادثات سابقة</div>';
+      return;
+    }
+    list.innerHTML = convs.map(c => `
+      <div class="conv-item${c.id === currentConvId ? ' active' : ''}" onclick="loadConversation('${c.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>${c.title}</span>
+      </div>`).join('');
+  } catch {}
+}
+
+async function newConversation() {
+  if (!isLoggedIn) { showLoginToast(); return; }
+  try {
+    const res = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'محادثة جديدة', model: currentModel }) });
+    const data = await res.json();
+    currentConvId = data.id;
+    convMessages = [];
+    document.getElementById('messages-inner').innerHTML = '';
+    document.getElementById('welcome-screen').style.display = '';
+    document.getElementById('save-indicator').textContent = '✓ محفوظ';
+    loadConversations();
+  } catch {}
+}
+
+async function loadConversation(id) {
+  try {
+    const res = await fetch('/api/conversations/' + id);
+    const conv = await res.json();
+    currentConvId = conv.id;
+    convMessages = conv.messages || [];
+    const inner = document.getElementById('messages-inner');
+    inner.innerHTML = '';
+    if (convMessages.length === 0) {
+      document.getElementById('welcome-screen').style.display = '';
+    } else {
+      document.getElementById('welcome-screen').style.display = 'none';
+      convMessages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message ' + msg.role;
+        if (msg.role === 'user') {
+          div.innerHTML = '<div class="message-bubble">' + msg.content.replace(/\n/g, '<br>') + '</div>';
+        } else {
+          div.innerHTML = '<div class="ai-avatar"><img src="assets/nexusai_logo_white.svg" width="36" height="36" alt="NexusAI"></div><div class="message-bubble"><div class="ai-content">' + msg.content + '</div><div class="message-actions"><button class="msg-action-btn" onclick="copyText(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> نسخ</button></div></div>';
+        }
+        inner.appendChild(div);
+      });
+    }
+    scrollToBottom();
+    loadConversations();
+  } catch {}
+}
+
+async function saveCurrentConversation() {
+  if (!isLoggedIn || !currentConvId) return;
+  try {
+    const msgEls = document.querySelectorAll('#messages-inner > .message');
+    const msgs = [];
+    msgEls.forEach(el => {
+      if (el.classList.contains('user')) {
+        msgs.push({ role: 'user', content: el.querySelector('.message-bubble')?.innerHTML || '' });
+      } else if (el.classList.contains('ai')) {
+        const content = el.querySelector('.ai-content')?.innerHTML || el.querySelector('.message-bubble')?.innerHTML || '';
+        msgs.push({ role: 'assistant', content });
+      }
+    });
+    convMessages = msgs;
+    const title = msgs.length > 0 ? msgs[0].content.replace(/<[^>]*>/g, '').substring(0, 50) : 'محادثة جديدة';
+    await fetch('/api/conversations/' + currentConvId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, title }) });
+    document.getElementById('save-indicator').textContent = '✓ محفوظ';
+  } catch {}
+}
+
+// Patch sendMessage to auto-save
+const origSendMessage = sendMessage;
+sendMessage = function() {
+  saveCurrentConversation();
+  origSendMessage.apply(this, arguments);
+};
+
+// Patch selectModel to update conversation model
+const origSelectModel = selectModel;
+selectModel = function(name, el) {
+  origSelectModel(name, el);
+  if (isLoggedIn && currentConvId) {
+    fetch('/api/conversations/' + currentConvId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: name }) });
+  }
+};
+
+// Check auth on load and set up new chat button
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+  const nc = document.querySelector('.new-chat-btn');
+  if (nc) nc.addEventListener('click', newConversation);
+});
+</script>
+</body>
+</html>
