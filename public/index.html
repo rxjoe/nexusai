@@ -1126,7 +1126,7 @@
             <span class="model-opt-badge">افتراضي</span>
           </div>
           <div class="model-opt" onclick="selectModel('GPT-OSS-120B',this)">
-            <img src="openai_logo.svg" width="18" height="18" alt="OpenAI" style="border-radius:3px;background:rgba(255,255,255,0.08)">
+            <img src="assets/openai_logo.svg" width="18" height="18" alt="OpenAI" style="border-radius:3px;background:rgba(255,255,255,0.08)">
             <div>
               <div class="model-opt-name">GPT-OSS-120B</div>
               <div class="model-opt-desc">أقوى وأبطأ</div>
@@ -1711,7 +1711,7 @@ function selectModel(name, el) {
   el.classList.add('selected');
   document.getElementById('model-dropdown').classList.remove('open');
   // Update model icon in the selector bar
-  const srcMap = { 'Qwen3-32B': 'qwen_logo.svg', 'GPT-OSS-120B': 'openai_logo.svg', 'Nexus-Mini': 'nexusai_logo_white.svg' };
+  const srcMap = { 'Qwen3-32B': 'assets/qwen_logo.svg', 'GPT-OSS-120B': 'assets/openai_logo.svg', 'Nexus-Mini': 'assets/nexusai_logo_white.svg' };
   const icon = document.getElementById('model-icon');
   if (icon && srcMap[name]) icon.src = srcMap[name];
   showToast('تم اختيار ' + name);
