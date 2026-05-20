@@ -1,0 +1,37 @@
+<svg width="100%" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>NexusAI Logo</title>
+  <desc>NexusAI logo with rotating orbital rings</desc>
+
+  <g transform="translate(340, 340)">
+    <!-- Core hexagon -->
+    <path d="M 0,-80 L 69.28,-40 L 69.28,40 L 0,80 L -69.28,40 L -69.28,-40 Z" stroke="white" stroke-width="3" fill="white" stroke-linejoin="miter"/>
+
+    <!-- Center -->
+    <circle cx="0" cy="0" r="12" fill="white"/>
+
+    <!-- Inner nodes -->
+    <circle cx="0" cy="-50" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="0" y1="-12" x2="0" y2="-42" stroke="white" stroke-width="2"/>
+    <circle cx="43" cy="-25" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="8" y1="-8" x2="36" y2="-20" stroke="white" stroke-width="2"/>
+    <circle cx="43" cy="25" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="8" y1="8" x2="36" y2="20" stroke="white" stroke-width="2"/>
+    <circle cx="0" cy="50" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="0" y1="12" x2="0" y2="42" stroke="white" stroke-width="2"/>
+    <circle cx="-43" cy="25" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="-8" y1="8" x2="-36" y2="20" stroke="white" stroke-width="2"/>
+    <circle cx="-43" cy="-25" r="8" fill="rgba(255,255,255,0.65)"/>
+    <line x1="-8" y1="-8" x2="-36" y2="-20" stroke="white" stroke-width="2"/>
+
+    <!-- Outer orbital circles with SMIL animation -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="4s" repeatCount="indefinite"/>
+      <circle cx="0" cy="-120" r="6" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="104" cy="-60" r="6" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="104" cy="60" r="6" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="0" cy="120" r="6" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="-104" cy="60" r="6" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="-104" cy="-60" r="6" fill="rgba(255,255,255,0.45)"/>
+    </g>
+  </g>
+</svg>
